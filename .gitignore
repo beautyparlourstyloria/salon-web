@@ -17,5 +17,6 @@ backend/node_modules/
 backend/.env
 backend/mongodb_data/
 backend/uploads/
+backend/test_db/
 _pooja
 _pooja.pub
