@@ -38,17 +38,21 @@ if (!fs.existsSync(dbPath)) {
 
 const startServer = async () => {
     try {
-        console.log("Spinning up persistent local MongoDB Server...");
-        const mongoServer = await MongoMemoryServer.create({
-            instance: {
-                dbPath: dbPath,
-                storageEngine: 'wiredTiger'
-            }
-        });
-        const mongoUri = mongoServer.getUri();
+        let mongoUri = process.env.MONGO_URI;
+
+        if (!mongoUri) {
+            console.log("No MONGO_URI found. Spinning up persistent local MongoDB Server...");
+            const mongoServer = await MongoMemoryServer.create({
+                instance: {
+                    dbPath: dbPath,
+                    storageEngine: 'wiredTiger'
+                }
+            });
+            mongoUri = mongoServer.getUri();
+        }
 
         await mongoose.connect(mongoUri);
-        console.log(`Connected successfully to persistent disk MongoDB at ${mongoUri}`);
+        console.log(`Connected successfully to MongoDB at ${mongoUri}`);
 
         const User = require('./models/User');
         const adminExists = await User.findOne({ email: 'admin@styloria.com' });
