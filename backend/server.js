@@ -2,22 +2,23 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
-
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const bannerRoutes = require('./routes/bannerRoutes');
+const dataRoutes = require('./routes/dataRoutes');
 
 const app = express();
-// Increase body-parser limits for Base64 image payload handling
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+// Increase body-parser limits drastically for very large iPhone/Mac Base64 image payload handling
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
 app.use(cors());
 
 app.use('/api/auth', authRoutes);
@@ -25,6 +26,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/banners', bannerRoutes);
+app.use('/api/data', dataRoutes);
 
 // Expose the 'uploads' directory statically at /uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

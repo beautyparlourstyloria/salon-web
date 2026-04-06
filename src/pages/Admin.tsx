@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Trash2, Plus, Check, Lock, LogOut, Edit, X, Mail, Search, ChevronDown } from "lucide-react";
 import { convertTo12HourFormat } from "@/lib/utils";
-import { userAPI, adminAPI, bookingAPI, authAPI, uploadAPI, default as api } from "@/services/api";
+import { userAPI, adminAPI, bookingAPI, authAPI, uploadAPI, bannerAPI, default as api } from "@/services/api";
 
 const Admin = () => {
     const {
@@ -47,6 +47,16 @@ const Admin = () => {
     const [searchBookingQuery, setSearchBookingQuery] = useState("");
     const [searchBookingDate, setSearchBookingDate] = useState("");
     const [searchUserQuery, setSearchUserQuery] = useState("");
+
+    const [banners, setBanners] = useState<any[]>([]);
+    const [bannerImageFile, setBannerImageFile] = useState<File | null>(null);
+    const [newBannerTitle, setNewBannerTitle] = useState("");
+    const [newBannerSubtitle, setNewBannerSubtitle] = useState("");
+    const [newBannerDesc, setNewBannerDesc] = useState("");
+    const [newBannerBtnText, setNewBannerBtnText] = useState("");
+    const [newBannerBtnUrl, setNewBannerBtnUrl] = useState("");
+    const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
+    const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
     const [newMedia, setNewMedia] = useState({ src: "", label: "", type: "photo" as "photo" | "video", category: "Makeup" });
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -101,6 +111,7 @@ const Admin = () => {
             setIsAuthenticated(true);
             fetchUsers();
             fetchBookings();
+            fetchBanners();
         } else {
             // Scrub any partially leftover or stale login variables
             setIsAuthenticated(false);
@@ -145,6 +156,82 @@ const Admin = () => {
             alert("Feedback sent successfully.");
         } catch (err) {
             alert("Failed to send feedback email.");
+        }
+    };
+
+    const fetchBanners = async () => {
+        try {
+            const res = await bannerAPI.getAllBanners();
+            setBanners(res.data);
+        } catch (err) {
+            console.error("Failed to fetch banners");
+        }
+    };
+
+    const handleAddBanner = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingBannerId && !bannerImageFile) return;
+
+        setIsUploadingBanner(true);
+        try {
+            let optimizedImageUrl;
+            if (bannerImageFile) {
+                const uploadRes = await uploadAPI.uploadImage(bannerImageFile);
+                optimizedImageUrl = uploadRes.data.url;
+            }
+
+            const bannerData: any = {
+                title: newBannerTitle,
+                subtitle: newBannerSubtitle,
+                description: newBannerDesc,
+                buttonText: newBannerBtnText,
+                buttonUrl: newBannerBtnUrl
+            };
+            
+            if (optimizedImageUrl) {
+                bannerData.imageUrl = optimizedImageUrl;
+            }
+
+            if (editingBannerId) {
+                await bannerAPI.updateBanner(editingBannerId, bannerData);
+                setEditingBannerId(null);
+                alert("Banner updated successfully!");
+            } else {
+                await bannerAPI.addBanner(bannerData);
+                alert("Banner added successfully!");
+            }
+            
+            setBannerImageFile(null);
+            setNewBannerTitle("");
+            setNewBannerSubtitle("");
+            setNewBannerDesc("");
+            setNewBannerBtnText("");
+            setNewBannerBtnUrl("");
+            fetchBanners();
+        } catch (err: any) {
+            alert("Banner upload failed: " + (err.response?.data?.message || err.message));
+        } finally {
+            setIsUploadingBanner(false);
+        }
+    };
+
+    const handleEditBanner = (banner: any) => {
+        setEditingBannerId(banner._id);
+        setNewBannerTitle(banner.title || "");
+        setNewBannerSubtitle(banner.subtitle || "");
+        setNewBannerDesc(banner.description || "");
+        setNewBannerBtnText(banner.buttonText || "");
+        setNewBannerBtnUrl(banner.buttonUrl || "");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDeleteBanner = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this banner?")) return;
+        try {
+            await bannerAPI.deleteBanner(id);
+            fetchBanners();
+        } catch (err) {
+            alert("Failed to delete banner");
         }
     };
 
@@ -202,8 +289,7 @@ const Admin = () => {
                 setIsEditingUploading(true);
                 try {
                     const uploadRes = await uploadAPI.uploadImage(editImageFile);
-                    const baseUrl = api.defaults.baseURL?.replace('/api', '') || '';
-                    imageUrl = `${baseUrl}${uploadRes.data.url}`;
+                    imageUrl = uploadRes.data.url;
                 } catch (err: any) {
                     alert("Image upload failed: " + (err.response?.data?.message || err.message));
                     setIsEditingUploading(false);
@@ -223,8 +309,7 @@ const Admin = () => {
                 setIsUploading(true);
                 try {
                     const uploadRes = await uploadAPI.uploadImage(imageFile);
-                    const baseUrl = api.defaults.baseURL?.replace('/api', '') || '';
-                    imageUrl = `${baseUrl}${uploadRes.data.url}`;
+                    imageUrl = uploadRes.data.url;
                 } catch (err: any) {
                     alert("Image upload failed: " + (err.response?.data?.message || err.message));
                     setIsUploading(false);
@@ -360,10 +445,123 @@ const Admin = () => {
                                 <TabsTrigger value="users" className="justify-start px-4 py-3 text-left data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg rounded-lg mb-1 transition-all">Users</TabsTrigger>
                                 <TabsTrigger value="bridal" className="justify-start px-4 py-3 text-left data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg rounded-lg mb-1 transition-all">Bridal</TabsTrigger>
                                 <TabsTrigger value="reviews" className="justify-start px-4 py-3 text-left data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg rounded-lg mb-1 transition-all">Testimonials</TabsTrigger>
+                                <TabsTrigger value="banners" className="justify-start px-4 py-3 text-left data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg rounded-lg mb-1 transition-all">Main Banners</TabsTrigger>
                             </TabsList>
                         </div>
 
                         <div className="flex-1 w-full min-w-0">
+
+                            {/* Banners Tab */}
+                            <TabsContent value="banners" className="space-y-6">
+                                <div className="glass-card p-6 rounded-2xl">
+                                    <h2 className="text-xl font-semibold mb-4">{editingBannerId ? "Edit Homepage Banner" : "Add Homepage Banner"}</h2>
+                                    <form onSubmit={handleAddBanner} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => setBannerImageFile(e.target.files ? e.target.files[0] : null)}
+                                                className="hidden"
+                                                id="banner-upload"
+                                            />
+                                            <label
+                                                htmlFor="banner-upload"
+                                                className="w-full px-4 py-2.5 rounded-xl border bg-background flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors h-full min-h-[140px]"
+                                            >
+                                                <span className="text-lg font-medium text-muted-foreground block text-center mb-2">
+                                                    {bannerImageFile ? bannerImageFile.name : "+ Select Image"}
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <input
+                                                placeholder="Top Subtitle (e.g. Premium Beauty Lounge)"
+                                                value={newBannerSubtitle}
+                                                onChange={(e) => setNewBannerSubtitle(e.target.value)}
+                                                className="w-full px-4 py-2 rounded-xl border bg-background"
+                                            />
+                                            <input
+                                                placeholder="Main Title (e.g. Where Beauty Meets Confidence)"
+                                                value={newBannerTitle}
+                                                onChange={(e) => setNewBannerTitle(e.target.value)}
+                                                className="w-full px-4 py-2 rounded-xl border bg-background"
+                                            />
+                                            <input
+                                                placeholder="Description Paragraph"
+                                                value={newBannerDesc}
+                                                onChange={(e) => setNewBannerDesc(e.target.value)}
+                                                className="w-full px-4 py-2 rounded-xl border bg-background"
+                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    placeholder="Button Text"
+                                                    value={newBannerBtnText}
+                                                    onChange={(e) => setNewBannerBtnText(e.target.value)}
+                                                    className="w-full px-4 py-2 rounded-xl border bg-background"
+                                                />
+                                                <input
+                                                    placeholder="Button Link (e.g. #services)"
+                                                    value={newBannerBtnUrl}
+                                                    onChange={(e) => setNewBannerBtnUrl(e.target.value)}
+                                                    className="w-full px-4 py-2 rounded-xl border bg-background"
+                                                />
+                                            </div>
+                                            {editingBannerId && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setEditingBannerId(null);
+                                                        setNewBannerTitle("");
+                                                        setNewBannerSubtitle("");
+                                                        setNewBannerDesc("");
+                                                        setNewBannerBtnText("");
+                                                        setNewBannerBtnUrl("");
+                                                        setBannerImageFile(null);
+                                                    }}
+                                                    className="w-full border-2 border-red-500 text-red-500 hover:bg-red-50 rounded-xl py-3 flex items-center justify-center gap-2 mt-2 font-medium"
+                                                >
+                                                    Cancel Editing
+                                                </button>
+                                            )}
+                                            <button type="submit" disabled={(!editingBannerId && !bannerImageFile) || isUploadingBanner} className="w-full gradient-primary text-white rounded-xl py-3 flex items-center justify-center gap-2 disabled:opacity-50 mt-4">
+                                                {isUploadingBanner ? "Saving..." : editingBannerId ? "Update Dynamic Banner" : "Save Dynamic Banner"}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {banners.map((b) => (
+                                        <div key={b._id} className="glass-card p-4 rounded-2xl flex flex-col gap-3">
+                                            <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden bg-black/5">
+                                                <img src={b.imageUrl} alt={b.title || "Banner"} className="w-full h-full object-cover" />
+                                            </div>
+                                            <div className="flex items-center justify-between mt-1">
+                                                <p className="font-medium text-sm truncate max-w-[200px]">{b.title || "Untitled Banner"}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleEditBanner(b)}
+                                                        className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                                                        title="Edit Banner"
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteBanner(b._id)}
+                                                        className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                                        title="Delete Banner"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {banners.length === 0 && (
+                                        <p className="text-muted-foreground col-span-full text-center py-8">No dynamic banners added yet. The default static banner is currently showing on the homepage.</p>
+                                    )}
+                                </div>
+                            </TabsContent>
 
                             {/* Bookings Tab */}
                             <TabsContent value="bookings" className="space-y-4 m-0">

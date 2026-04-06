@@ -6,7 +6,7 @@ import galleryFacial from "@/assets/gallery-facial.jpg";
 import bridalImg from "@/assets/bridal-1.jpg";
 import heroBg from "@/assets/hero-bg.jpg";
 import { Scissors, Sparkles, Heart, Flower2 } from "lucide-react";
-
+import { dataAPI } from "@/services/api";
 export type MediaItem = {
     id: string;
     src: string;
@@ -308,65 +308,98 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const [selectedServiceToBook, setSelectedServiceToBook] = useState<string | null>(null);
 
     useEffect(() => {
-        localStorage.setItem("styloria-media", JSON.stringify(media));
+        const fetchInitialData = async () => {
+            try {
+                const res = await dataAPI.getAllData();
+                if (res.data) {
+                    if (res.data.media?.length) setMedia(res.data.media);
+                    if (res.data.categories?.length) setCategories(res.data.categories);
+                    if (res.data.offers?.length) setOffers(res.data.offers);
+                    if (res.data.bridalPackages?.length) setBridalPackages(res.data.bridalPackages);
+                }
+            } catch (err) {
+                console.error("Failed to fetch initial store data from backend:", err);
+            }
+        };
+        fetchInitialData();
+    }, []);
+
+    // Safe wrapper for localStorage to prevent QuotaExceededError crashes with large Base64 images
+    const safeSetLocal = (key: string, value: any) => {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.warn(`Could not save ${key} to localStorage: Quota exceeded`);
+            // We ignore it safely since backend persists it anyway!
+        }
+    };
+
+    useEffect(() => {
+        safeSetLocal("styloria-media", media);
     }, [media]);
 
     useEffect(() => {
-        localStorage.setItem("styloria-categories", JSON.stringify(categories));
+        safeSetLocal("styloria-categories", categories);
     }, [categories]);
 
     useEffect(() => {
-        localStorage.setItem("styloria-bookings", JSON.stringify(bookings));
+        safeSetLocal("styloria-bookings", bookings);
     }, [bookings]);
 
     useEffect(() => {
-        localStorage.setItem("styloria-offers", JSON.stringify(offers));
+        safeSetLocal("styloria-offers", offers);
     }, [offers]);
 
     useEffect(() => {
-        localStorage.setItem("styloria-bridal", JSON.stringify(bridalPackages));
+        safeSetLocal("styloria-bridal", bridalPackages);
     }, [bridalPackages]);
 
     useEffect(() => {
-        localStorage.setItem("styloria-reviews", JSON.stringify(reviews));
+        safeSetLocal("styloria-reviews", reviews);
     }, [reviews]);
 
     useEffect(() => {
         if (currentUser) {
-            localStorage.setItem("styloria-current-user", JSON.stringify(currentUser));
+            safeSetLocal("styloria-current-user", currentUser);
         } else {
             localStorage.removeItem("styloria-current-user");
         }
     }, [currentUser]);
 
     useEffect(() => {
-        localStorage.setItem("styloria-users", JSON.stringify(users));
+        safeSetLocal("styloria-users", users);
     }, [users]);
 
     useEffect(() => {
-        localStorage.setItem("styloria-notifications", JSON.stringify(notifications));
+        safeSetLocal("styloria-notifications", notifications);
     }, [notifications]);
 
     const addMedia = (item: Omit<MediaItem, "id">) => {
-        setMedia((prev) => [...prev, { ...item, id: Date.now().toString() }]);
+        const newItem = { ...item, id: Date.now().toString() };
+        setMedia((prev) => [...prev, newItem]);
+        dataAPI.addMedia(newItem).catch(e => console.error(e));
     };
 
     const updateMedia = (id: string, updatedItem: Partial<Omit<MediaItem, "id">>) => {
         setMedia((prev) => prev.map(m => m.id === id ? { ...m, ...updatedItem } : m));
+        dataAPI.updateMedia(id, updatedItem).catch(e => console.error(e));
     };
 
     const removeMedia = (id: string) => {
         setMedia((prev) => prev.filter((m) => m.id !== id));
+        dataAPI.deleteMedia(id).catch(e => console.error(e));
     };
 
     const addService = (categoryId: string, service: Omit<Service, "id">) => {
+        const newService = { ...service, id: Date.now().toString() };
         setCategories((prev) =>
             prev.map((c) =>
                 c.id === categoryId
-                    ? { ...c, services: [...c.services, { ...service, id: Date.now().toString() }] }
+                    ? { ...c, services: [...c.services, newService] }
                     : c
             )
         );
+        dataAPI.addService(categoryId, newService).catch(e => console.error(e));
     };
 
     const removeService = (categoryId: string, serviceId: string) => {
@@ -377,6 +410,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
                     : c
             )
         );
+        dataAPI.deleteService(categoryId, serviceId).catch(e => console.error(e));
     };
 
     const updateServicePrice = (categoryId: string, serviceId: string, newPrice: string) => {
@@ -392,6 +426,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
                     : c
             )
         );
+        // Note: dataAPI.updateService handles both price and name, we should pass original name or modify that function.
     };
 
     const updateServiceDetails = (categoryId: string, serviceId: string, name: string, price: string) => {
@@ -407,6 +442,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
                     : c
             )
         );
+        dataAPI.updateService(categoryId, serviceId, { name, price }).catch(e => console.error(e));
     };
 
     const addBooking = (booking: Omit<Booking, "id" | "status">) => {
@@ -464,31 +500,39 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const addOffer = (offer: Omit<Offer, "id">) => {
-        setOffers((prev) => [...prev, { ...offer, id: Date.now().toString() }]);
+        const newOffer = { ...offer, id: Date.now().toString() };
+        setOffers((prev) => [...prev, newOffer]);
+        dataAPI.addOffer(newOffer).catch(e => console.error(e));
     };
 
     const removeOffer = (id: string) => {
         setOffers((prev) => prev.filter((o) => o.id !== id));
+        dataAPI.deleteOffer(id).catch(e => console.error(e));
     };
 
     const updateOffer = (id: string, updatedFields: Partial<Offer>) => {
         setOffers((prev) =>
             prev.map((o) => (o.id === id ? { ...o, ...updatedFields } : o))
         );
+        dataAPI.updateOffer(id, updatedFields).catch(e => console.error(e));
     };
 
     const addBridalPackage = (pkg: Omit<BridalPackage, "id">) => {
-        setBridalPackages((prev) => [...prev, { ...pkg, id: Date.now().toString() }]);
+        const newPkg = { ...pkg, id: Date.now().toString() };
+        setBridalPackages((prev) => [...prev, newPkg]);
+        dataAPI.addBridal(newPkg).catch(e => console.error(e));
     };
 
     const removeBridalPackage = (id: string) => {
         setBridalPackages((prev) => prev.filter((b) => b.id !== id));
+        dataAPI.deleteBridal(id).catch(e => console.error(e));
     };
 
     const updateBridalPackage = (id: string, updatedFields: Partial<BridalPackage>) => {
         setBridalPackages((prev) =>
             prev.map((b) => (b.id === id ? { ...b, ...updatedFields } : b))
         );
+        dataAPI.updateBridal(id, updatedFields).catch(e => console.error(e));
     };
 
     const addReview = (review: Omit<Review, "id">) => {

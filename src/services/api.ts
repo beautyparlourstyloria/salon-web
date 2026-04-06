@@ -51,16 +51,39 @@ export const adminAPI = {
     sendFeedbackEmail: (data: { to: string, subject: string, text: string }) => api.post('/admin/send-email', data)
 };
 
+export const bannerAPI = {
+    getAllBanners: () => api.get('/banners'),
+    addBanner: (data: { imageUrl: string; title?: string; subtitle?: string; description?: string; buttonText?: string; buttonUrl?: string }) => api.post('/banners', data),
+    updateBanner: (id: string, data: { imageUrl?: string; title?: string; subtitle?: string; description?: string; buttonText?: string; buttonUrl?: string }) => api.put(`/banners/${id}`, data),
+    deleteBanner: (id: string) => api.delete(`/banners/${id}`)
+};
+
 export const uploadAPI = {
     uploadImage: (file: File) => {
         const formData = new FormData();
         formData.append('image', file);
-        return api.post('/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        return api.post('/upload', formData);
     }
+};
+
+export const dataAPI = {
+    getAllData: () => api.get('/data/all'),
+    // Media
+    addMedia: (data: any) => api.post('/data/media', data),
+    updateMedia: (id: string, data: any) => api.put(`/data/media/${id}`, data),
+    deleteMedia: (id: string) => api.delete(`/data/media/${id}`),
+    // Offers
+    addOffer: (data: any) => api.post('/data/offer', data),
+    updateOffer: (id: string, data: any) => api.put(`/data/offer/${id}`, data),
+    deleteOffer: (id: string) => api.delete(`/data/offer/${id}`),
+    // Bridal
+    addBridal: (data: any) => api.post('/data/bridal', data),
+    updateBridal: (id: string, data: any) => api.put(`/data/bridal/${id}`, data),
+    deleteBridal: (id: string) => api.delete(`/data/bridal/${id}`),
+    // Services
+    addService: (categoryId: string, data: any) => api.post(`/data/category/${categoryId}/service`, data),
+    updateService: (categoryId: string, serviceId: string, data: { name: string, price: string }) => api.put(`/data/category/${categoryId}/service/${serviceId}`, data),
+    deleteService: (categoryId: string, serviceId: string) => api.delete(`/data/category/${categoryId}/service/${serviceId}`),
 };
 
 export default api;

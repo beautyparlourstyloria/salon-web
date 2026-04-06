@@ -3,7 +3,7 @@ import { useStore } from "@/lib/store";
 import { Navigate } from "react-router-dom";
 import { User, Mail, Phone, Camera, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { userAPI, bookingAPI } from "@/services/api";
+import { userAPI, bookingAPI, uploadAPI } from "@/services/api";
 
 const Profile = () => {
     const { currentUser, updateUser, bookings } = useStore();
@@ -39,31 +39,25 @@ const Profile = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Basic validation
-        if (!file.type.startsWith("image/")) {
-            alert("Please upload a valid image file.");
-            return;
-        }
+        // Backend will perform more sophisticated validation
 
         setIsUploading(true);
 
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            const base64String = reader.result as string;
-            try {
-                if (currentUser.id) {
-                    await userAPI.updateProfileImage(currentUser.id, base64String);
-                }
-                updateUser(currentUser.email, currentUser.name, currentUser.phone, base64String);
-                alert("Profile picture updated successfully!");
-            } catch (err) {
-                console.error("Failed to upload image:", err);
-                alert("Failed to update profile picture.");
-            } finally {
-                setIsUploading(false);
+        try {
+            const uploadRes = await uploadAPI.uploadImage(file);
+            const optimizedImageUrl = uploadRes.data.url;
+
+            if (currentUser.id) {
+                await userAPI.updateProfileImage(currentUser.id, optimizedImageUrl);
             }
-        };
-        reader.readAsDataURL(file);
+            updateUser(currentUser.email, currentUser.name, currentUser.phone, optimizedImageUrl);
+            alert("Profile picture updated successfully!");
+        } catch (err) {
+            console.error("Failed to upload image:", err);
+            alert("Failed to update profile picture. Please make sure image is valid.");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     return (
