@@ -38,7 +38,7 @@ const BridalSection = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {bridalPackages.map((pkg, i) => (
+          {bridalPackages.filter(p => p.isVisible !== false).map((pkg, i) => (
             <motion.div
               key={pkg.name}
               initial={{ opacity: 0, y: 40 }}

@@ -1,22 +1,13 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import galleryNails from "@/assets/gallery-nails.jpg";
-import galleryHair from "@/assets/gallery-hair.jpg";
-import galleryFacial from "@/assets/gallery-facial.jpg";
-import galleryMakeup from "@/assets/gallery-makeup.jpg";
-import bridalImg from "@/assets/bridal-1.jpg";
-
-const images = [
-  { src: galleryMakeup, alt: "Makeup artistry", label: "Makeup" },
-  { src: bridalImg, alt: "Bridal look", label: "Bridal" },
-  { src: galleryNails, alt: "Nail art", label: "Nails" },
-  { src: galleryHair, alt: "Hair styling", label: "Hair" },
-  { src: galleryFacial, alt: "Skincare treatments", label: "Skincare" },
-];
+import { useStore } from "@/lib/store";
 
 const GallerySection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
+  const { media } = useStore();
+  
+  const displayImages = media.filter(m => m.isVisible !== false).slice(0, 6);
 
   return (
     <section id="gallery" className="section-padding" ref={ref}>
@@ -34,9 +25,9 @@ const GallerySection = () => {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {images.map((img, i) => (
+          {displayImages.map((img, i) => (
             <motion.div
-              key={img.label}
+              key={img.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={inView ? { opacity: 1, scale: 1 } : {}}
               transition={{ delay: i * 0.1, duration: 0.5 }}
@@ -46,7 +37,7 @@ const GallerySection = () => {
             >
               <img
                 src={img.src}
-                alt={img.alt}
+                alt={img.label}
                 className="w-full h-full object-cover aspect-square group-hover:scale-110 transition-transform duration-700"
                 loading="lazy"
               />

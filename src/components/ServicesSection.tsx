@@ -57,7 +57,7 @@ const ServicesSection = () => {
           transition={{ duration: 0.4 }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto"
         >
-          {activeCategory?.services.map((service, i) => (
+          {activeCategory?.services.filter(s => s.isVisible !== false).map((service, i) => (
             <motion.div
               key={service.id}
               initial={{ opacity: 0, y: 20 }}

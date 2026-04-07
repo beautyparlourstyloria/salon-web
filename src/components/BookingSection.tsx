@@ -15,8 +15,8 @@ const BookingSection = () => {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [submittedPhone, setSubmittedPhone] = useState("");
-  const allServices = categories.map((c) => c.services.map((s) => `${s.name} (${s.price}${s.endPrice ? ` to ${s.endPrice}` : ''})`)).flat();
-  const allOffers = offers.filter(o => o.title !== "Bridal Membership").map((o) => `${o.title} (${o.price})`);
+  const allServices = categories.map((c) => c.services.filter(s => s.isVisible !== false).map((s) => `${s.name} (${s.price}${s.endPrice ? ` to ${s.endPrice}` : ''})`)).flat();
+  const allOffers = offers.filter(o => o.title !== "Bridal Membership" && o.isVisible !== false).map((o) => `${o.title} (${o.price})`);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -220,7 +220,7 @@ const BookingSection = () => {
                     {[
                       { label: "Standard Services", items: allServices },
                       { label: "Memberships & Offers", items: allOffers },
-                      { label: "Bridal Packages", items: bridalPackages.map(pkg => `${pkg.name} (${pkg.price})`) }
+                      { label: "Bridal Packages", items: bridalPackages.filter(p => p.isVisible !== false).map(pkg => `${pkg.name} (${pkg.price})`) }
                     ].map((group) => (
                       <div key={group.label}>
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{group.label}</p>

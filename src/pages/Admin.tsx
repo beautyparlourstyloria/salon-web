@@ -57,18 +57,19 @@ const Admin = () => {
     const [newBannerBtnUrl, setNewBannerBtnUrl] = useState("");
     const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
     const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+    const [newBannerIsActive, setNewBannerIsActive] = useState(true);
 
-    const [newMedia, setNewMedia] = useState({ src: "", label: "", type: "photo" as "photo" | "video", category: "Makeup" });
+    const [newMedia, setNewMedia] = useState({ src: "", label: "", type: "photo" as "photo" | "video", category: "Makeup", isVisible: true });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [editingMediaId, setEditingMediaId] = useState<string | null>(null);
-    const [editMediaForm, setEditMediaForm] = useState({ src: "", label: "", type: "photo" as "photo" | "video", category: "Makeup" });
+    const [editMediaForm, setEditMediaForm] = useState({ src: "", label: "", type: "photo" as "photo" | "video", category: "Makeup", isVisible: true });
     const [editImageFile, setEditImageFile] = useState<File | null>(null);
     const [isEditingUploading, setIsEditingUploading] = useState(false);
-    const [newService, setNewService] = useState({ name: "", price: "", endPrice: "", categoryId: "hair" });
-    const [newOffer, setNewOffer] = useState({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false });
+    const [newService, setNewService] = useState({ name: "", price: "", endPrice: "", categoryId: "hair", isVisible: true });
+    const [newOffer, setNewOffer] = useState({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true });
     const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-    const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", endPrice: "" });
+    const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", endPrice: "", isVisible: true });
 
     const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
     const [editBookingForm, setEditBookingForm] = useState({ date: "", time: "", beautician: "" });
@@ -96,8 +97,8 @@ const Admin = () => {
     const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
 
     const [editingBridalId, setEditingBridalId] = useState<string | null>(null);
-    const [editBridalForm, setEditBridalForm] = useState({ name: "", price: "", features: "" });
-    const [newBridal, setNewBridal] = useState({ name: "", price: "", features: "" });
+    const [editBridalForm, setEditBridalForm] = useState({ name: "", price: "", features: "", isVisible: true });
+    const [newBridal, setNewBridal] = useState({ name: "", price: "", features: "", isVisible: true });
 
     const [newReview, setNewReview] = useState({ name: "", text: "", rating: 5, showOnHomepage: true });
     const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
@@ -185,7 +186,8 @@ const Admin = () => {
                 subtitle: newBannerSubtitle,
                 description: newBannerDesc,
                 buttonText: newBannerBtnText,
-                buttonUrl: newBannerBtnUrl
+                buttonUrl: newBannerBtnUrl,
+                isActive: newBannerIsActive
             };
             
             if (optimizedImageUrl) {
@@ -207,6 +209,7 @@ const Admin = () => {
             setNewBannerDesc("");
             setNewBannerBtnText("");
             setNewBannerBtnUrl("");
+            setNewBannerIsActive(true);
             fetchBanners();
         } catch (err: any) {
             alert("Banner upload failed: " + (err.response?.data?.message || err.message));
@@ -222,6 +225,7 @@ const Admin = () => {
         setNewBannerDesc(banner.description || "");
         setNewBannerBtnText(banner.buttonText || "");
         setNewBannerBtnUrl(banner.buttonUrl || "");
+        setNewBannerIsActive(banner.isActive ?? true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -301,7 +305,7 @@ const Admin = () => {
 
             updateMedia(editingMediaId, { ...editMediaForm, src: imageUrl });
             setEditingMediaId(null);
-            setEditMediaForm({ src: "", label: "", type: "photo", category: "Makeup" });
+            setEditMediaForm({ src: "", label: "", type: "photo", category: "Makeup", isVisible: true });
             setEditImageFile(null);
         } else {
             let imageUrl = newMedia.src;
@@ -321,7 +325,7 @@ const Admin = () => {
             if (!imageUrl || !newMedia.label) return;
 
             addMedia({ ...newMedia, src: imageUrl });
-            setNewMedia({ src: "", label: "", type: "photo", category: "Makeup" });
+            setNewMedia({ src: "", label: "", type: "photo", category: "Makeup", isVisible: true });
             setImageFile(null);
         }
     };
@@ -329,8 +333,8 @@ const Admin = () => {
     const handleAddService = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newService.name || !newService.price) return;
-        addService(newService.categoryId, { name: newService.name, price: newService.price, endPrice: newService.endPrice });
-        setNewService({ name: "", price: "", endPrice: "", categoryId: "hair" });
+        addService(newService.categoryId, { name: newService.name, price: newService.price, endPrice: newService.endPrice, isVisible: newService.isVisible });
+        setNewService({ name: "", price: "", endPrice: "", categoryId: "hair", isVisible: true });
     };
 
     const handleAddOffer = (e: React.FormEvent) => {
@@ -342,14 +346,14 @@ const Admin = () => {
         } else {
             addOffer({ ...newOffer });
         }
-        setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false });
+        setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true });
     };
 
     const handleSaveEditService = (categoryId: string, serviceId: string) => {
         if (!editServiceForm.name || !editServiceForm.price) return;
-        updateServiceDetails(categoryId, serviceId, editServiceForm.name, editServiceForm.price, editServiceForm.endPrice);
+        updateServiceDetails(categoryId, serviceId, editServiceForm.name, editServiceForm.price, editServiceForm.endPrice, editServiceForm.isVisible);
         setEditingServiceId(null);
-        setEditServiceForm({ name: "", price: "", endPrice: "" });
+        setEditServiceForm({ name: "", price: "", endPrice: "", isVisible: true });
     };
 
     const calculateTotalAmount = (serviceString?: string) => {
@@ -553,6 +557,7 @@ const Admin = () => {
                                                         setNewBannerDesc("");
                                                         setNewBannerBtnText("");
                                                         setNewBannerBtnUrl("");
+                                                        setNewBannerIsActive(true);
                                                         setBannerImageFile(null);
                                                     }}
                                                     className="w-full border-2 border-red-500 text-red-500 hover:bg-red-50 rounded-xl py-3 flex items-center justify-center gap-2 mt-2 font-medium"
@@ -560,6 +565,10 @@ const Admin = () => {
                                                     Cancel Editing
                                                 </button>
                                             )}
+                                            <div className="flex items-center gap-2 mt-2 py-2">
+                                                <input type="checkbox" id="bannerActive" checked={newBannerIsActive} onChange={(e) => setNewBannerIsActive(e.target.checked)} className="w-4 h-4 cursor-pointer" />
+                                                <label htmlFor="bannerActive" className="text-sm cursor-pointer">Visible on Website</label>
+                                            </div>
                                             <button type="submit" disabled={(!editingBannerId && !bannerImageFile) || isUploadingBanner} className="w-full gradient-primary text-white rounded-xl py-3 flex items-center justify-center gap-2 disabled:opacity-50 mt-4">
                                                 {isUploadingBanner ? "Saving..." : editingBannerId ? "Update Dynamic Banner" : "Save Dynamic Banner"}
                                             </button>
@@ -572,6 +581,9 @@ const Admin = () => {
                                         <div key={b._id} className="glass-card p-4 rounded-2xl flex flex-col gap-3">
                                             <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden bg-black/5">
                                                 <img src={b.imageUrl} alt={b.title || "Banner"} className="w-full h-full object-cover" />
+                                                {!b.isActive && (
+                                                    <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full z-10">Hidden</div>
+                                                )}
                                             </div>
                                             <div className="flex items-center justify-between mt-1">
                                                 <p className="font-medium text-sm truncate max-w-[200px]">{b.title || "Untitled Banner"}</p>
@@ -882,6 +894,12 @@ const Admin = () => {
                                                 <option key={c.id} value={c.id}>{c.label}</option>
                                             ))}
                                         </select>
+                                        <div className="col-span-full">
+                                            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <input type="checkbox" checked={newService.isVisible} onChange={(e) => setNewService({ ...newService, isVisible: e.target.checked })} className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer" />
+                                                Visible on Website
+                                            </label>
+                                        </div>
                                         <button type="submit" className="gradient-primary text-white rounded-xl py-2 flex items-center justify-center gap-2">
                                             <Plus size={18} /> Add
                                         </button>
@@ -917,6 +935,9 @@ const Admin = () => {
                                                                             value={editServiceForm.endPrice}
                                                                             onChange={(e) => setEditServiceForm({ ...editServiceForm, endPrice: e.target.value })}
                                                                         />
+                                                                        <label className="flex items-center gap-1.5 text-xs text-muted-foreground mr-1" title="Show on Website">
+                                                                            <input type="checkbox" checked={editServiceForm.isVisible} onChange={(e) => setEditServiceForm({ ...editServiceForm, isVisible: e.target.checked })} />
+                                                                        </label>
                                                                         <button
                                                                             onClick={() => handleSaveEditService(c.id, s.id)}
                                                                             className="text-green-600 bg-green-100 p-1 rounded-md"
@@ -934,7 +955,7 @@ const Admin = () => {
                                                             ) : (
                                                                 <span className="text-primary font-semibold text-sm cursor-pointer hover:underline" onClick={() => {
                                                                     setEditingServiceId(s.id);
-                                                                    setEditServiceForm({ name: s.name, price: s.price, endPrice: s.endPrice || "" });
+                                                                    setEditServiceForm({ name: s.name, price: s.price, endPrice: s.endPrice || "", isVisible: s.isVisible ?? true });
                                                                 }}>
                                                                     {s.price}{s.endPrice ? ` to ${s.endPrice}` : ""} <Edit size={12} className="inline ml-1" />
                                                                 </span>
@@ -1007,6 +1028,12 @@ const Admin = () => {
                                                 <option key={opt} value={opt}>{opt}</option>
                                             ))}
                                         </select>
+                                        <div className="sm:col-span-2 mt-1">
+                                            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <input type="checkbox" checked={editingMediaId ? editMediaForm.isVisible : newMedia.isVisible} onChange={(e) => editingMediaId ? setEditMediaForm({ ...editMediaForm, isVisible: e.target.checked }) : setNewMedia({ ...newMedia, isVisible: e.target.checked })} className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer" />
+                                                Visible on Website
+                                            </label>
+                                        </div>
                                         <div className="flex gap-2 w-full">
                                             <button type="submit" disabled={(editingMediaId && isEditingUploading) || (!editingMediaId && isUploading) || (!editingMediaId && !newMedia.src && !imageFile)} className="flex-1 gradient-primary text-white rounded-xl py-2 flex items-center justify-center gap-2 disabled:opacity-50">
                                                 {editingMediaId
@@ -1015,7 +1042,7 @@ const Admin = () => {
                                                 }
                                             </button>
                                             {editingMediaId && (
-                                                <button type="button" onClick={() => { setEditingMediaId(null); setEditImageFile(null); setEditMediaForm({ src: "", label: "", type: "photo", category: "Makeup" }); }} className="flex-1 border border-input bg-secondary text-foreground hover:bg-secondary/50 rounded-xl py-2 flex items-center justify-center gap-2 transition-colors">
+                                                <button type="button" onClick={() => { setEditingMediaId(null); setEditImageFile(null); setEditMediaForm({ src: "", label: "", type: "photo", category: "Makeup", isVisible: true }); }} className="flex-1 border border-input bg-secondary text-foreground hover:bg-secondary/50 rounded-xl py-2 flex items-center justify-center gap-2 transition-colors">
                                                     Cancel
                                                 </button>
                                             )}
@@ -1031,7 +1058,7 @@ const Admin = () => {
                                                 <button
                                                     onClick={() => {
                                                         setEditingMediaId(m.id);
-                                                        setEditMediaForm({ src: m.src, label: m.label, type: m.type || "photo", category: m.category });
+                                                        setEditMediaForm({ src: m.src, label: m.label, type: m.type as "photo" | "video" || "photo", category: m.category, isVisible: m.isVisible ?? true });
                                                         setEditImageFile(null);
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                                     }}
@@ -1101,12 +1128,18 @@ const Admin = () => {
                                             />
                                             <label htmlFor="isMembership" className="text-sm">Is this a Membership? (Shows on homepage)</label>
                                         </div>
+                                        <div className="col-span-full mb-2">
+                                            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <input type="checkbox" checked={newOffer.isVisible} onChange={(e) => setNewOffer({ ...newOffer, isVisible: e.target.checked })} className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer" />
+                                                Visible on Website
+                                            </label>
+                                        </div>
                                         <div className="flex flex-col sm:flex-row gap-3 sm:col-span-2">
                                             <button type="submit" className="flex-1 gradient-primary text-white rounded-xl py-2 flex items-center justify-center gap-2">
                                                 {editingOfferId ? <><Check size={18} /> Update Offer</> : <><Plus size={18} /> Add Offer</>}
                                             </button>
                                             {editingOfferId && (
-                                                <button type="button" onClick={() => { setEditingOfferId(null); setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false }); }} className="flex-1 border border-input bg-secondary text-foreground hover:bg-secondary/50 rounded-xl py-2 flex items-center justify-center gap-2 transition-colors">
+                                                <button type="button" onClick={() => { setEditingOfferId(null); setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true }); }} className="flex-1 border border-input bg-secondary text-foreground hover:bg-secondary/50 rounded-xl py-2 flex items-center justify-center gap-2 transition-colors">
                                                     Cancel
                                                 </button>
                                             )}
@@ -1121,7 +1154,7 @@ const Admin = () => {
                                                 <button
                                                     onClick={() => {
                                                         setEditingOfferId(o.id);
-                                                        setNewOffer({ title: o.title, price: o.price, originalPrice: o.originalPrice || "", desc: o.desc || "", iconName: o.iconName || "Star", tag: o.tag || "", tagColor: o.tagColor || "bg-primary", isMembership: o.isMembership || false });
+                                                        setNewOffer({ title: o.title, price: o.price, originalPrice: o.originalPrice || "", desc: o.desc || "", iconName: o.iconName || "Star", tag: o.tag || "", tagColor: o.tagColor || "bg-primary", isMembership: o.isMembership || false, isVisible: o.isVisible ?? true });
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                                     }}
                                                     className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
@@ -1221,11 +1254,17 @@ const Admin = () => {
                                             features: newBridal.features.split(',').map(f => f.trim()).filter(Boolean),
                                             tier: "silver"
                                         });
-                                        setNewBridal({ name: "", price: "", features: "" });
+                                        setNewBridal({ name: "", price: "", features: "", isVisible: true });
                                     }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <input placeholder="Package Name" value={newBridal.name} onChange={(e) => setNewBridal({ ...newBridal, name: e.target.value })} className="w-full px-4 py-2 rounded-xl border bg-background" required />
                                         <input placeholder="Price" value={newBridal.price} onChange={(e) => setNewBridal({ ...newBridal, price: e.target.value })} className="w-full px-4 py-2 rounded-xl border bg-background" required />
                                         <textarea placeholder="Features (comma separated)" value={newBridal.features} onChange={(e) => setNewBridal({ ...newBridal, features: e.target.value })} className="w-full px-4 py-2 rounded-xl border bg-background sm:col-span-2" rows={2} />
+                                        <div className="sm:col-span-2 mt-2">
+                                            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <input type="checkbox" checked={newBridal.isVisible} onChange={(e) => setNewBridal({ ...newBridal, isVisible: e.target.checked })} className="rounded border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer" />
+                                                Visible on Website
+                                            </label>
+                                        </div>
                                         <button type="submit" className="sm:col-span-2 gradient-primary text-white rounded-xl py-2 flex items-center justify-center gap-2"><Plus size={18} /> Add Package</button>
                                     </form>
                                 </div>
@@ -1254,13 +1293,18 @@ const Admin = () => {
                                                         rows={4}
                                                         placeholder="Features (comma separated)"
                                                     />
+                                                    <label className="flex items-center gap-2 text-sm text-muted-foreground mb-2 mt-1">
+                                                        <input type="checkbox" checked={editBridalForm.isVisible} onChange={(e) => setEditBridalForm({ ...editBridalForm, isVisible: e.target.checked })} className="rounded border-input text-primary h-4 w-4 cursor-pointer" />
+                                                        Visible on Website
+                                                    </label>
                                                     <div className="flex gap-2">
                                                         <button
                                                             onClick={() => {
                                                                 updateBridalPackage(pkg.id, {
                                                                     name: editBridalForm.name,
                                                                     price: editBridalForm.price,
-                                                                    features: editBridalForm.features.split(',').map(f => f.trim()).filter(Boolean)
+                                                                    features: editBridalForm.features.split(',').map(f => f.trim()).filter(Boolean),
+                                                                    isVisible: editBridalForm.isVisible
                                                                 });
                                                                 setEditingBridalId(null);
                                                             }}
@@ -1282,7 +1326,7 @@ const Admin = () => {
                                                         <button
                                                             onClick={() => {
                                                                 setEditingBridalId(pkg.id);
-                                                                setEditBridalForm({ name: pkg.name, price: pkg.price, features: pkg.features.join(', ') });
+                                                                setEditBridalForm({ name: pkg.name, price: pkg.price, features: pkg.features.join(', '), isVisible: pkg.isVisible ?? true });
                                                             }}
                                                             className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
                                                         >

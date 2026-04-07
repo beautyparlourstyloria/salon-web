@@ -13,6 +13,7 @@ export type MediaItem = {
     type: "photo" | "video";
     label: string;
     category: string;
+    isVisible?: boolean;
 };
 
 export type Service = {
@@ -20,6 +21,7 @@ export type Service = {
     name: string;
     price: string;
     endPrice?: string;
+    isVisible?: boolean;
 };
 
 export type ServiceCategory = {
@@ -51,6 +53,7 @@ export type Offer = {
     tag?: string;
     tagColor?: string;
     isMembership?: boolean;
+    isVisible?: boolean;
 };
 
 export type BridalPackage = {
@@ -60,6 +63,7 @@ export type BridalPackage = {
     tier: "silver" | "gold" | "platinum";
     popular?: boolean;
     features: string[];
+    isVisible?: boolean;
 };
 
 export type Review = {
@@ -96,7 +100,7 @@ type StoreContextType = {
     addService: (categoryId: string, service: Omit<Service, "id">) => void;
     removeService: (categoryId: string, serviceId: string) => void;
     updateServicePrice: (categoryId: string, serviceId: string, newPrice: string) => void;
-    updateServiceDetails: (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string) => void;
+    updateServiceDetails: (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string, isVisible?: boolean) => void;
     bookings: Booking[];
     addBooking: (booking: Omit<Booking, "id" | "status">) => void;
     updateBookingStatus: (id: string, status: Booking["status"]) => void;
@@ -430,20 +434,20 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         // Note: dataAPI.updateService handles both price and name, we should pass original name or modify that function.
     };
 
-    const updateServiceDetails = (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string) => {
+    const updateServiceDetails = (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string, isVisible?: boolean) => {
         setCategories((prev) =>
             prev.map((c) =>
                 c.id === categoryId
                     ? {
                         ...c,
                         services: c.services.map((s) =>
-                            s.id === serviceId ? { ...s, name, price, endPrice } : s
+                            s.id === serviceId ? { ...s, name, price, endPrice, isVisible: isVisible ?? true } : s
                         ),
                     }
                     : c
             )
         );
-        dataAPI.updateService(categoryId, serviceId, { name, price, endPrice }).catch(e => console.error(e));
+        dataAPI.updateService(categoryId, serviceId, { name, price, endPrice, isVisible: isVisible ?? true }).catch(e => console.error(e));
     };
 
     const addBooking = (booking: Omit<Booking, "id" | "status">) => {

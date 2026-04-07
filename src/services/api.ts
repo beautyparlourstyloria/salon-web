@@ -53,8 +53,8 @@ export const adminAPI = {
 
 export const bannerAPI = {
     getAllBanners: () => api.get('/banners'),
-    addBanner: (data: { imageUrl: string; title?: string; subtitle?: string; description?: string; buttonText?: string; buttonUrl?: string }) => api.post('/banners', data),
-    updateBanner: (id: string, data: { imageUrl?: string; title?: string; subtitle?: string; description?: string; buttonText?: string; buttonUrl?: string }) => api.put(`/banners/${id}`, data),
+    addBanner: (data: { imageUrl: string; title?: string; subtitle?: string; description?: string; buttonText?: string; buttonUrl?: string; isActive?: boolean }) => api.post('/banners', data),
+    updateBanner: (id: string, data: { imageUrl?: string; title?: string; subtitle?: string; description?: string; buttonText?: string; buttonUrl?: string; isActive?: boolean }) => api.put(`/banners/${id}`, data),
     deleteBanner: (id: string) => api.delete(`/banners/${id}`)
 };
 
@@ -82,7 +82,7 @@ export const dataAPI = {
     deleteBridal: (id: string) => api.delete(`/data/bridal/${id}`),
     // Services
     addService: (categoryId: string, data: any) => api.post(`/data/category/${categoryId}/service`, data),
-    updateService: (categoryId: string, serviceId: string, data: { name: string, price: string, endPrice?: string }) => api.put(`/data/category/${categoryId}/service/${serviceId}`, data),
+    updateService: (categoryId: string, serviceId: string, data: { name: string, price: string, endPrice?: string, isVisible?: boolean }) => api.put(`/data/category/${categoryId}/service/${serviceId}`, data),
     deleteService: (categoryId: string, serviceId: string) => api.delete(`/data/category/${categoryId}/service/${serviceId}`),
 };
 

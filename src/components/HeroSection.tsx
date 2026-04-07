@@ -11,7 +11,7 @@ const HeroSection = () => {
     const fetchBanners = async () => {
       try {
         const res = await bannerAPI.getAllBanners();
-        setBanners(res.data);
+        setBanners(res.data.filter((b: any) => b.isActive !== false));
       } catch (err) {
         console.error("Failed to fetch banners", err);
       }

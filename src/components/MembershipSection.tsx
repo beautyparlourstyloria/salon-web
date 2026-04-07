@@ -18,7 +18,7 @@ const MembershipSection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const { offers } = useStore();
-  const membershipOffers = offers.filter((o) => o.isMembership);
+  const membershipOffers = offers.filter((o) => o.isMembership && o.isVisible !== false);
 
   return (
     <section id="membership" className="section-padding" ref={ref}>
