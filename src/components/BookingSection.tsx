@@ -15,7 +15,7 @@ const BookingSection = () => {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [submittedPhone, setSubmittedPhone] = useState("");
-  const allServices = categories.map((c) => c.services.map((s) => `${s.name} (${s.price})`)).flat();
+  const allServices = categories.map((c) => c.services.map((s) => `${s.name} (${s.price}${s.endPrice ? ` to ${s.endPrice}` : ''})`)).flat();
   const allOffers = offers.filter(o => o.title !== "Bridal Membership").map((o) => `${o.title} (${o.price})`);
 
   const dropdownRef = useRef<HTMLDivElement>(null);

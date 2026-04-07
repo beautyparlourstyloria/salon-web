@@ -154,7 +154,7 @@ router.put('/category/:id/service/:serviceId', async (req, res) => {
     try {
         await Category.updateOne(
             { id: req.params.id, "services.id": req.params.serviceId },
-            { $set: { "services.$.name": req.body.name, "services.$.price": req.body.price } }
+            { $set: { "services.$.name": req.body.name, "services.$.price": req.body.price, "services.$.endPrice": req.body.endPrice } }
         );
         res.json({success:true});
     } catch(err) { res.status(500).json({error: err.message}); }

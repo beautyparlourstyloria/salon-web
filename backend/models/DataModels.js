@@ -32,7 +32,8 @@ const bridalSchema = new mongoose.Schema({
 const serviceSchema = new mongoose.Schema({
     id: String,
     name: String,
-    price: String
+    price: String,
+    endPrice: String,
 });
 
 const categorySchema = new mongoose.Schema({

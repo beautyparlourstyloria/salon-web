@@ -19,6 +19,7 @@ export type Service = {
     id: string;
     name: string;
     price: string;
+    endPrice?: string;
 };
 
 export type ServiceCategory = {
@@ -95,7 +96,7 @@ type StoreContextType = {
     addService: (categoryId: string, service: Omit<Service, "id">) => void;
     removeService: (categoryId: string, serviceId: string) => void;
     updateServicePrice: (categoryId: string, serviceId: string, newPrice: string) => void;
-    updateServiceDetails: (categoryId: string, serviceId: string, name: string, price: string) => void;
+    updateServiceDetails: (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string) => void;
     bookings: Booking[];
     addBooking: (booking: Omit<Booking, "id" | "status">) => void;
     updateBookingStatus: (id: string, status: Booking["status"]) => void;
@@ -429,20 +430,20 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         // Note: dataAPI.updateService handles both price and name, we should pass original name or modify that function.
     };
 
-    const updateServiceDetails = (categoryId: string, serviceId: string, name: string, price: string) => {
+    const updateServiceDetails = (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string) => {
         setCategories((prev) =>
             prev.map((c) =>
                 c.id === categoryId
                     ? {
                         ...c,
                         services: c.services.map((s) =>
-                            s.id === serviceId ? { ...s, name, price } : s
+                            s.id === serviceId ? { ...s, name, price, endPrice } : s
                         ),
                     }
                     : c
             )
         );
-        dataAPI.updateService(categoryId, serviceId, { name, price }).catch(e => console.error(e));
+        dataAPI.updateService(categoryId, serviceId, { name, price, endPrice }).catch(e => console.error(e));
     };
 
     const addBooking = (booking: Omit<Booking, "id" | "status">) => {

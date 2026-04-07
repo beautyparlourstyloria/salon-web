@@ -67,11 +67,11 @@ const ServicesSection = () => {
             >
               <div>
                 <h3 className="text-lg font-heading font-semibold mb-1">{service.name}</h3>
-                <p className="text-2xl font-bold text-gradient-primary">{service.price}</p>
+                <p className="text-2xl font-bold text-gradient-primary">{service.price}{service.endPrice ? ` to ${service.endPrice}` : ''}</p>
               </div>
               <a
                 href="#booking"
-                onClick={() => setSelectedServiceToBook(`${service.name} (${service.price})`)}
+                onClick={() => setSelectedServiceToBook(`${service.name} (${service.price}${service.endPrice ? ` to ${service.endPrice}` : ''})`)}
                 className="mt-4 border border-primary/30 text-primary text-center py-2.5 rounded-full text-base font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
               >
                 Book Now

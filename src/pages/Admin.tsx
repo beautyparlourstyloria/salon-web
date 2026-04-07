@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Trash2, Plus, Check, Lock, LogOut, Edit, X, Mail, Search, ChevronDown } from "lucide-react";
+import { Trash2, Plus, Check, Lock, LogOut, Edit, X, Mail, Search, ChevronDown, Download } from "lucide-react";
 import { convertTo12HourFormat } from "@/lib/utils";
 import { userAPI, adminAPI, bookingAPI, authAPI, uploadAPI, bannerAPI, default as api } from "@/services/api";
 
@@ -65,10 +65,10 @@ const Admin = () => {
     const [editMediaForm, setEditMediaForm] = useState({ src: "", label: "", type: "photo" as "photo" | "video", category: "Makeup" });
     const [editImageFile, setEditImageFile] = useState<File | null>(null);
     const [isEditingUploading, setIsEditingUploading] = useState(false);
-    const [newService, setNewService] = useState({ name: "", price: "", categoryId: "hair" });
+    const [newService, setNewService] = useState({ name: "", price: "", endPrice: "", categoryId: "hair" });
     const [newOffer, setNewOffer] = useState({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false });
     const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-    const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "" });
+    const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", endPrice: "" });
 
     const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
     const [editBookingForm, setEditBookingForm] = useState({ date: "", time: "", beautician: "" });
@@ -329,8 +329,8 @@ const Admin = () => {
     const handleAddService = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newService.name || !newService.price) return;
-        addService(newService.categoryId, { name: newService.name, price: newService.price });
-        setNewService({ name: "", price: "", categoryId: "hair" });
+        addService(newService.categoryId, { name: newService.name, price: newService.price, endPrice: newService.endPrice });
+        setNewService({ name: "", price: "", endPrice: "", categoryId: "hair" });
     };
 
     const handleAddOffer = (e: React.FormEvent) => {
@@ -347,9 +347,9 @@ const Admin = () => {
 
     const handleSaveEditService = (categoryId: string, serviceId: string) => {
         if (!editServiceForm.name || !editServiceForm.price) return;
-        updateServiceDetails(categoryId, serviceId, editServiceForm.name, editServiceForm.price);
+        updateServiceDetails(categoryId, serviceId, editServiceForm.name, editServiceForm.price, editServiceForm.endPrice);
         setEditingServiceId(null);
-        setEditServiceForm({ name: "", price: "" });
+        setEditServiceForm({ name: "", price: "", endPrice: "" });
     };
 
     const calculateTotalAmount = (serviceString?: string) => {
@@ -362,6 +362,43 @@ const Admin = () => {
             if (!isNaN(num)) total += num;
         }
         return total > 0 ? `₹${total.toLocaleString('en-IN')}` : "-";
+    };
+
+    const downloadCSV = (filename: string, headers: string[], data: any[][]) => {
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + [headers.join(","), ...data.map(row => row.map(cell => `"${(cell || "").toString().replace(/"/g, '""')}"`).join(","))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleDownloadBookings = () => {
+        const headers = ["Name", "Phone", "Service", "Date", "Time", "Beautician", "Total Amount", "Status"];
+        const fileData = backendBookings.map(b => [
+            b.name,
+            b.phone,
+            b.service,
+            b.date,
+            convertTo12HourFormat(b.time),
+            b.beautician || "Any",
+            calculateTotalAmount(b.service),
+            b.status
+        ]);
+        downloadCSV("styloria_bookings.csv", headers, fileData);
+    };
+
+    const handleDownloadUsers = () => {
+        const headers = ["Name", "Email Address", "Phone Number"];
+        const fileData = backendUsers.map(u => [
+            u.name,
+            u.email,
+            u.phone || "-"
+        ]);
+        downloadCSV("styloria_users.csv", headers, fileData);
     };
 
     if (!isAuthenticated) {
@@ -567,7 +604,12 @@ const Admin = () => {
                             <TabsContent value="bookings" className="space-y-4 m-0">
                                 <div className="glass-card p-6 rounded-2xl">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                                        <h2 className="text-xl font-semibold">Manage Bookings</h2>
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-xl font-semibold">Manage Bookings</h2>
+                                            <button onClick={handleDownloadBookings} className="flex items-center gap-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-lg transition-colors">
+                                                <Download size={14} /> Export CSV
+                                            </button>
+                                        </div>
                                         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                                             <div className="relative w-full sm:w-64">
                                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -648,7 +690,7 @@ const Admin = () => {
                                                                                         <button type="button" onClick={() => setIsEditServiceDropdownOpen(false)} className="text-xs font-semibold text-primary">Done</button>
                                                                                     </div>
                                                                                     {[
-                                                                                        { label: "Standard Services", items: categories.map((c) => c.services.map((s) => `${s.name} (${s.price})`)).flat() },
+                                                                                        { label: "Standard Services", items: categories.map((c) => c.services.map((s) => `${s.name} (${s.price}${s.endPrice ? ` to ${s.endPrice}` : ''})`)).flat() },
                                                                                         { label: "Memberships & Offers", items: offers.filter(o => o.title !== "Bridal Membership").map((o) => `${o.title} (${o.price})`) },
                                                                                         { label: "Bridal Packages", items: bridalPackages.map(pkg => `${pkg.name} (${pkg.price})`) }
                                                                                     ].map((group) => (
@@ -761,7 +803,7 @@ const Admin = () => {
                                                                             setEditBookingForm({ date: b.date, time: b.time, beautician: b.beautician || "" }); 
                                                                             // Make sure to parse existing services exactly as they are in the checkboxes
                                                                             const allServiceNames = [
-                                                                                ...categories.map((c) => c.services.map((s) => `${s.name} (${s.price})`)).flat(),
+                                                                                ...categories.map((c) => c.services.map((s) => `${s.name} (${s.price}${s.endPrice ? ` to ${s.endPrice}` : ''})`)).flat(),
                                                                                 ...offers.filter(o => o.title !== "Bridal Membership").map((o) => `${o.title} (${o.price})`),
                                                                                 ...bridalPackages.map(pkg => `${pkg.name} (${pkg.price})`)
                                                                             ];
@@ -819,11 +861,17 @@ const Admin = () => {
                                             required
                                         />
                                         <input
-                                            placeholder="Price (e.g. ₹999)"
+                                            placeholder="Start Price (e.g. ₹150)"
                                             value={newService.price}
                                             onChange={(e) => setNewService({ ...newService, price: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl border bg-background"
                                             required
+                                        />
+                                        <input
+                                            placeholder="End Price (Optional, e.g. ₹499)"
+                                            value={newService.endPrice}
+                                            onChange={(e) => setNewService({ ...newService, endPrice: e.target.value })}
+                                            className="w-full px-4 py-2 rounded-xl border bg-background"
                                         />
                                         <select
                                             value={newService.categoryId}
@@ -858,9 +906,16 @@ const Admin = () => {
                                                                     />
                                                                     <div className="flex items-center gap-2">
                                                                         <input
+                                                                            placeholder="Start Price"
                                                                             className="border border-input rounded-md px-2 py-0.5 text-sm w-24 bg-background"
                                                                             value={editServiceForm.price}
                                                                             onChange={(e) => setEditServiceForm({ ...editServiceForm, price: e.target.value })}
+                                                                        />
+                                                                        <input
+                                                                            placeholder="End Price"
+                                                                            className="border border-input rounded-md px-2 py-0.5 text-sm w-24 bg-background"
+                                                                            value={editServiceForm.endPrice}
+                                                                            onChange={(e) => setEditServiceForm({ ...editServiceForm, endPrice: e.target.value })}
                                                                         />
                                                                         <button
                                                                             onClick={() => handleSaveEditService(c.id, s.id)}
@@ -879,9 +934,9 @@ const Admin = () => {
                                                             ) : (
                                                                 <span className="text-primary font-semibold text-sm cursor-pointer hover:underline" onClick={() => {
                                                                     setEditingServiceId(s.id);
-                                                                    setEditServiceForm({ name: s.name, price: s.price });
+                                                                    setEditServiceForm({ name: s.name, price: s.price, endPrice: s.endPrice || "" });
                                                                 }}>
-                                                                    {s.price} <Edit size={12} className="inline ml-1" />
+                                                                    {s.price}{s.endPrice ? ` to ${s.endPrice}` : ""} <Edit size={12} className="inline ml-1" />
                                                                 </span>
                                                             )}
                                                         </div>
@@ -1094,7 +1149,12 @@ const Admin = () => {
                             <TabsContent value="users" className="space-y-4 m-0">
                                 <div className="glass-card p-6 rounded-2xl">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                                        <h2 className="text-xl font-semibold">Registered Users</h2>
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-xl font-semibold">Registered Users</h2>
+                                            <button onClick={handleDownloadUsers} className="flex items-center gap-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-lg transition-colors">
+                                                <Download size={14} /> Export CSV
+                                            </button>
+                                        </div>
                                         <div className="relative w-full sm:w-64">
                                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                             <input
