@@ -82,8 +82,10 @@ export const dataAPI = {
     deleteBridal: (id: string) => api.delete(`/data/bridal/${id}`),
     // Services
     addService: (categoryId: string, data: any) => api.post(`/data/category/${categoryId}/service`, data),
-    updateService: (categoryId: string, serviceId: string, data: { name: string, price: string, endPrice?: string, isVisible?: boolean }) => api.put(`/data/category/${categoryId}/service/${serviceId}`, data),
+    updateService: (categoryId: string, serviceId: string, data: { name: string, price: string, endPrice?: string, isVisible?: boolean, note?: string, order?: number }) => api.put(`/data/category/${categoryId}/service/${serviceId}`, data),
     deleteService: (categoryId: string, serviceId: string) => api.delete(`/data/category/${categoryId}/service/${serviceId}`),
+    // Reorder
+    reorderData: (data: { type: string, items: { id: string, order: number }[], categoryId?: string }) => api.post('/data/reorder', data),
 };
 
 export default api;

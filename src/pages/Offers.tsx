@@ -17,6 +17,7 @@ const iconMap: Record<string, any> = {
 
 const Offers = () => {
   const { offers, setSelectedServiceToBook } = useStore();
+  const displayedOffers = offers.filter(o => o.isVisible !== false);
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -46,7 +47,7 @@ const Offers = () => {
       <section className="section-padding">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {offers.map((offer, i) => {
+            {displayedOffers.map((offer, i) => {
               const IconComponent = iconMap[offer.iconName] || Star;
               return (
                 <motion.div
@@ -76,7 +77,8 @@ const Offers = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-muted-foreground text-sm">{offer.desc}</p>
+                  <p className="text-muted-foreground text-sm mb-3">{offer.desc}</p>
+                  {offer.note && <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-md italic ring-1 ring-border mb-3">Note: {offer.note}</p>}
                   <a
                     href="/#booking"
                     onClick={() => setSelectedServiceToBook(`${offer.title} (${offer.price})`)}

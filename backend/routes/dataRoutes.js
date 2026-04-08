@@ -139,6 +139,33 @@ router.delete('/bridal/:id', async (req, res) => {
     } catch(err) { res.status(500).json({error: err.message}); }
 });
 
+// REORDER
+router.post('/reorder', async (req, res) => {
+    try {
+        const { type, items, categoryId } = req.body;
+        if (type === 'service' && categoryId) {
+            const cat = await Category.findOne({id: categoryId});
+            if (cat) {
+                 items.forEach(({ id, order }) => {
+                     const s = cat.services.find(x => x.id === id);
+                     if (s) s.order = order;
+                 });
+                 cat.services.sort((a,b) => (a.order || 0) - (b.order || 0));
+                 await cat.save();
+            }
+        } else if (type === 'offer') {
+            for (const { id, order } of items) {
+                await Offer.updateOne({ id }, { $set: { order } });
+            }
+        } else if (type === 'bridal') {
+            for (const { id, order } of items) {
+                await Bridal.updateOne({ id }, { $set: { order } });
+            }
+        }
+        res.json({success: true});
+    } catch(err) { res.status(500).json({error: err.message}); }
+});
+
 // SERVICES
 router.post('/category/:id/service', async (req, res) => {
     try {
@@ -154,7 +181,7 @@ router.put('/category/:id/service/:serviceId', async (req, res) => {
     try {
         await Category.updateOne(
             { id: req.params.id, "services.id": req.params.serviceId },
-            { $set: { "services.$.name": req.body.name, "services.$.price": req.body.price, "services.$.endPrice": req.body.endPrice } }
+            { $set: { "services.$.name": req.body.name, "services.$.price": req.body.price, "services.$.endPrice": req.body.endPrice, "services.$.isVisible": req.body.isVisible, "services.$.note": req.body.note, "services.$.order": req.body.order } }
         );
         res.json({success:true});
     } catch(err) { res.status(500).json({error: err.message}); }

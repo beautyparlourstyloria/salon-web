@@ -22,12 +22,15 @@ export type Service = {
     price: string;
     endPrice?: string;
     isVisible?: boolean;
+    note?: string;
+    order?: number;
 };
 
 export type ServiceCategory = {
     id: string;
     label: string;
     iconName: string; // Storing string for lucide icon
+    order?: number;
     services: Service[];
 };
 
@@ -54,6 +57,8 @@ export type Offer = {
     tagColor?: string;
     isMembership?: boolean;
     isVisible?: boolean;
+    note?: string;
+    order?: number;
 };
 
 export type BridalPackage = {
@@ -64,6 +69,8 @@ export type BridalPackage = {
     popular?: boolean;
     features: string[];
     isVisible?: boolean;
+    note?: string;
+    order?: number;
 };
 
 export type Review = {
@@ -100,7 +107,7 @@ type StoreContextType = {
     addService: (categoryId: string, service: Omit<Service, "id">) => void;
     removeService: (categoryId: string, serviceId: string) => void;
     updateServicePrice: (categoryId: string, serviceId: string, newPrice: string) => void;
-    updateServiceDetails: (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string, isVisible?: boolean) => void;
+    updateServiceDetails: (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string, isVisible?: boolean, note?: string, order?: number) => void;
     bookings: Booking[];
     addBooking: (booking: Omit<Booking, "id" | "status">) => void;
     updateBookingStatus: (id: string, status: Booking["status"]) => void;
@@ -127,6 +134,7 @@ type StoreContextType = {
     setSelectedServiceToBook: (service: string | null) => void;
     notifications: AppNotification[];
     markNotificationAsRead: (id: string) => void;
+    updateOrder: (type: "service" | "offer" | "bridal", items: { id: string, order: number }[], categoryId?: string) => void;
 };
 
 const initialBridalPackages: BridalPackage[] = [
@@ -318,9 +326,22 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
                 const res = await dataAPI.getAllData();
                 if (res.data) {
                     if (res.data.media?.length) setMedia(res.data.media);
-                    if (res.data.categories?.length) setCategories(res.data.categories);
-                    if (res.data.offers?.length) setOffers(res.data.offers);
-                    if (res.data.bridalPackages?.length) setBridalPackages(res.data.bridalPackages);
+                    if (res.data.categories?.length) {
+                        const cats = res.data.categories;
+                        cats.sort((a: any, b: any) => (a.order||0) - (b.order||0));
+                        cats.forEach((c: any) => c.services.sort((a: any, b: any) => (a.order||0) - (b.order||0)));
+                        setCategories(cats);
+                    }
+                    if (res.data.offers?.length) {
+                        const offs = res.data.offers;
+                        offs.sort((a: any, b: any) => (a.order||0) - (b.order||0));
+                        setOffers(offs);
+                    }
+                    if (res.data.bridalPackages?.length) {
+                        const bps = res.data.bridalPackages;
+                        bps.sort((a: any, b: any) => (a.order||0) - (b.order||0));
+                        setBridalPackages(bps);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to fetch initial store data from backend:", err);
@@ -434,20 +455,20 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         // Note: dataAPI.updateService handles both price and name, we should pass original name or modify that function.
     };
 
-    const updateServiceDetails = (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string, isVisible?: boolean) => {
+    const updateServiceDetails = (categoryId: string, serviceId: string, name: string, price: string, endPrice?: string, isVisible?: boolean, note?: string, order?: number) => {
         setCategories((prev) =>
             prev.map((c) =>
                 c.id === categoryId
                     ? {
                         ...c,
                         services: c.services.map((s) =>
-                            s.id === serviceId ? { ...s, name, price, endPrice, isVisible: isVisible ?? true } : s
+                            s.id === serviceId ? { ...s, name, price, endPrice, isVisible: isVisible ?? true, note, order } : s
                         ),
                     }
                     : c
             )
         );
-        dataAPI.updateService(categoryId, serviceId, { name, price, endPrice, isVisible: isVisible ?? true }).catch(e => console.error(e));
+        dataAPI.updateService(categoryId, serviceId, { name, price, endPrice, isVisible: isVisible ?? true, note, order }).catch(e => console.error(e));
     };
 
     const addBooking = (booking: Omit<Booking, "id" | "status">) => {
@@ -581,6 +602,39 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         setNotifications((prev) => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
     };
 
+    const updateOrder = (type: "service" | "offer" | "bridal", items: { id: string, order: number }[], categoryId?: string) => {
+        if (type === "service" && categoryId) {
+            setCategories(prev => prev.map(c => {
+                if (c.id === categoryId) {
+                    const newServices = c.services.map(s => {
+                        const it = items.find(i => i.id === s.id);
+                        return it ? { ...s, order: it.order } : s;
+                    });
+                    newServices.sort((a, b) => (a.order || 0) - (b.order || 0));
+                    return { ...c, services: newServices };
+                }
+                return c;
+            }));
+        } else if (type === "offer") {
+            setOffers(prev => {
+                const updated = prev.map(o => {
+                    const it = items.find(i => i.id === o.id);
+                    return it ? { ...o, order: it.order } : o;
+                });
+                return updated.sort((a,b) => (a.order || 0) - (b.order || 0));
+            });
+        } else if (type === "bridal") {
+            setBridalPackages(prev => {
+                const updated = prev.map(b => {
+                    const it = items.find(i => i.id === b.id);
+                    return it ? { ...b, order: it.order } : b;
+                });
+                return updated.sort((a,b) => (a.order || 0) - (b.order || 0));
+            });
+        }
+        dataAPI.reorderData({ type, items, categoryId }).catch(e => console.error(e));
+    };
+
     return (
         <StoreContext.Provider
             value={{
@@ -619,6 +673,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
                 setSelectedServiceToBook,
                 notifications,
                 markNotificationAsRead,
+                updateOrder,
             }}
         >
             {children}

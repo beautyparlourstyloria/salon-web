@@ -17,8 +17,9 @@ const Gallery = () => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [lightbox, setLightbox] = useState<MediaItem | null>(null);
   const { media } = useStore();
-
-  const filtered = activeFilter === "All" ? media : media.filter((m) => m.category === activeFilter);
+  
+  const visibleMedia = media.filter(m => m.isVisible !== false);
+  const filtered = activeFilter === "All" ? visibleMedia : visibleMedia.filter((m) => m.category === activeFilter);
 
   return (
     <div className="min-h-screen">

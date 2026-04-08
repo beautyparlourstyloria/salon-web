@@ -65,7 +65,8 @@ const MembershipSection = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">{offer.desc}</p>
+                <p className="text-sm text-muted-foreground mb-3">{offer.desc}</p>
+                {offer.note && <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-md italic ring-1 ring-border mt-auto">Note: {offer.note}</p>}
               </motion.div>
             );
           })}

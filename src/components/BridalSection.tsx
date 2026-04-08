@@ -62,7 +62,8 @@ const BridalSection = () => {
                 <h3 className="text-xl font-heading font-bold">{pkg.name}</h3>
               </div>
 
-              <p className="text-3xl font-bold text-gradient-primary mb-6">{pkg.price}</p>
+              <p className="text-3xl font-bold text-gradient-primary mb-3">{pkg.price}</p>
+              {pkg.note && <p className="text-xs text-muted-foreground mb-4 bg-secondary/50 p-2 rounded-md italic ring-1 ring-border">Note: {pkg.note}</p>}
 
               <ul className="space-y-3 mb-8 flex-1">
                 {pkg.features.map((f) => (

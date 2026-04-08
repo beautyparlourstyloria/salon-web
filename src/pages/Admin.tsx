@@ -18,6 +18,7 @@ const Admin = () => {
         removeService,
         updateServicePrice,
         updateServiceDetails,
+        updateOrder,
         bookings,
         updateBookingStatus,
         updateBooking,
@@ -66,10 +67,10 @@ const Admin = () => {
     const [editMediaForm, setEditMediaForm] = useState({ src: "", label: "", type: "photo" as "photo" | "video", category: "Makeup", isVisible: true });
     const [editImageFile, setEditImageFile] = useState<File | null>(null);
     const [isEditingUploading, setIsEditingUploading] = useState(false);
-    const [newService, setNewService] = useState({ name: "", price: "", endPrice: "", categoryId: "hair", isVisible: true });
-    const [newOffer, setNewOffer] = useState({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true });
+    const [newService, setNewService] = useState({ name: "", price: "", endPrice: "", categoryId: "hair", isVisible: true, note: "" });
+    const [newOffer, setNewOffer] = useState({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true, note: "" });
     const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-    const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", endPrice: "", isVisible: true });
+    const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", endPrice: "", isVisible: true, note: "" });
 
     const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
     const [editBookingForm, setEditBookingForm] = useState({ date: "", time: "", beautician: "" });
@@ -97,8 +98,56 @@ const Admin = () => {
     const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
 
     const [editingBridalId, setEditingBridalId] = useState<string | null>(null);
-    const [editBridalForm, setEditBridalForm] = useState({ name: "", price: "", features: "", isVisible: true });
-    const [newBridal, setNewBridal] = useState({ name: "", price: "", features: "", isVisible: true });
+    const [editBridalForm, setEditBridalForm] = useState({ name: "", price: "", features: "", isVisible: true, note: "" });
+    const [newBridal, setNewBridal] = useState({ name: "", price: "", features: "", isVisible: true, note: "" });
+
+    const [draggedItem, setDraggedItem] = useState<{ id: string, type: 'service' | 'offer' | 'bridal', categoryId?: string } | null>(null);
+
+    const handleDragStart = (e: React.DragEvent, id: string, type: 'service' | 'offer' | 'bridal', categoryId?: string) => {
+        setDraggedItem({ id, type, categoryId });
+        e.dataTransfer.effectAllowed = "move";
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = (e: React.DragEvent, targetId: string, type: 'service' | 'offer' | 'bridal', categoryId?: string) => {
+        e.preventDefault();
+        if (!draggedItem || draggedItem.id === targetId || draggedItem.type !== type || draggedItem.categoryId !== categoryId) {
+            setDraggedItem(null);
+            return;
+        }
+
+        let list: any[] = [];
+        if (type === 'service') {
+            list = categories.find(c => c.id === categoryId)?.services || [];
+        } else if (type === 'offer') {
+            list = [...offers];
+        } else if (type === 'bridal') {
+            list = [...bridalPackages];
+        }
+
+        const draggedIdx = list.findIndex(item => item.id === draggedItem.id);
+        const targetIdx = list.findIndex(item => item.id === targetId);
+
+        if (draggedIdx === -1 || targetIdx === -1) {
+            setDraggedItem(null);
+            return;
+        }
+
+        const newList = [...list];
+        const [moved] = newList.splice(draggedIdx, 1);
+        newList.splice(targetIdx, 0, moved);
+
+        const newOrders = newList.map((item, idx) => ({ id: item.id, order: idx }));
+        updateOrder(type, newOrders, categoryId);
+        setDraggedItem(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedItem(null);
+    };
 
     const [newReview, setNewReview] = useState({ name: "", text: "", rating: 5, showOnHomepage: true });
     const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
@@ -333,8 +382,8 @@ const Admin = () => {
     const handleAddService = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newService.name || !newService.price) return;
-        addService(newService.categoryId, { name: newService.name, price: newService.price, endPrice: newService.endPrice, isVisible: newService.isVisible });
-        setNewService({ name: "", price: "", endPrice: "", categoryId: "hair", isVisible: true });
+        addService(newService.categoryId, { name: newService.name, price: newService.price, endPrice: newService.endPrice, isVisible: newService.isVisible, note: newService.note });
+        setNewService({ name: "", price: "", endPrice: "", categoryId: "hair", isVisible: true, note: "" });
     };
 
     const handleAddOffer = (e: React.FormEvent) => {
@@ -346,14 +395,14 @@ const Admin = () => {
         } else {
             addOffer({ ...newOffer });
         }
-        setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true });
+        setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true, note: "" });
     };
 
     const handleSaveEditService = (categoryId: string, serviceId: string) => {
         if (!editServiceForm.name || !editServiceForm.price) return;
-        updateServiceDetails(categoryId, serviceId, editServiceForm.name, editServiceForm.price, editServiceForm.endPrice, editServiceForm.isVisible);
+        updateServiceDetails(categoryId, serviceId, editServiceForm.name, editServiceForm.price, editServiceForm.endPrice, editServiceForm.isVisible, editServiceForm.note);
         setEditingServiceId(null);
-        setEditServiceForm({ name: "", price: "", endPrice: "", isVisible: true });
+        setEditServiceForm({ name: "", price: "", endPrice: "", isVisible: true, note: "" });
     };
 
     const calculateTotalAmount = (serviceString?: string) => {
@@ -885,6 +934,12 @@ const Admin = () => {
                                             onChange={(e) => setNewService({ ...newService, endPrice: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl border bg-background"
                                         />
+                                        <input
+                                            placeholder="Note (Condition/Details)"
+                                            value={newService.note}
+                                            onChange={(e) => setNewService({ ...newService, note: e.target.value })}
+                                            className="w-full px-4 py-2 rounded-xl border bg-background sm:col-span-2"
+                                        />
                                         <select
                                             value={newService.categoryId}
                                             onChange={(e) => setNewService({ ...newService, categoryId: e.target.value })}
@@ -912,7 +967,15 @@ const Admin = () => {
                                             <h3 className="text-lg font-bold mb-4">{c.label}</h3>
                                             <ul className="space-y-3">
                                                 {c.services.map((s) => (
-                                                    <li key={s.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                                                    <li 
+                                                        key={s.id} 
+                                                        className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0"
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, s.id, 'service', c.id)}
+                                                        onDragOver={handleDragOver}
+                                                        onDrop={(e) => handleDrop(e, s.id, 'service', c.id)}
+                                                        onDragEnd={handleDragEnd}
+                                                    >
                                                         <div>
                                                             <p className="font-medium">{s.name}</p>
                                                             {editingServiceId === s.id ? (
@@ -935,6 +998,12 @@ const Admin = () => {
                                                                             value={editServiceForm.endPrice}
                                                                             onChange={(e) => setEditServiceForm({ ...editServiceForm, endPrice: e.target.value })}
                                                                         />
+                                                                        <input
+                                                                            placeholder="Note"
+                                                                            className="border border-input rounded-md px-2 py-0.5 text-sm w-32 bg-background"
+                                                                            value={editServiceForm.note}
+                                                                            onChange={(e) => setEditServiceForm({ ...editServiceForm, note: e.target.value })}
+                                                                        />
                                                                         <label className="flex items-center gap-1.5 text-xs text-muted-foreground mr-1" title="Show on Website">
                                                                             <input type="checkbox" checked={editServiceForm.isVisible} onChange={(e) => setEditServiceForm({ ...editServiceForm, isVisible: e.target.checked })} />
                                                                         </label>
@@ -955,7 +1024,7 @@ const Admin = () => {
                                                             ) : (
                                                                 <span className="text-primary font-semibold text-sm cursor-pointer hover:underline" onClick={() => {
                                                                     setEditingServiceId(s.id);
-                                                                    setEditServiceForm({ name: s.name, price: s.price, endPrice: s.endPrice || "", isVisible: s.isVisible ?? true });
+                                                                    setEditServiceForm({ name: s.name, price: s.price, endPrice: s.endPrice || "", isVisible: s.isVisible ?? true, note: s.note || "" });
                                                                 }}>
                                                                     {s.price}{s.endPrice ? ` to ${s.endPrice}` : ""} <Edit size={12} className="inline ml-1" />
                                                                 </span>
@@ -1111,6 +1180,12 @@ const Admin = () => {
                                             onChange={(e) => setNewOffer({ ...newOffer, tag: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl border bg-background"
                                         />
+                                        <input
+                                            placeholder="Note (e.g. condition/validity)"
+                                            value={newOffer.note}
+                                            onChange={(e) => setNewOffer({ ...newOffer, note: e.target.value })}
+                                            className="w-full px-4 py-2 rounded-xl border bg-background sm:col-span-2"
+                                        />
                                         <textarea
                                             placeholder="Description"
                                             value={newOffer.desc}
@@ -1139,7 +1214,7 @@ const Admin = () => {
                                                 {editingOfferId ? <><Check size={18} /> Update Offer</> : <><Plus size={18} /> Add Offer</>}
                                             </button>
                                             {editingOfferId && (
-                                                <button type="button" onClick={() => { setEditingOfferId(null); setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true }); }} className="flex-1 border border-input bg-secondary text-foreground hover:bg-secondary/50 rounded-xl py-2 flex items-center justify-center gap-2 transition-colors">
+                                                <button type="button" onClick={() => { setEditingOfferId(null); setNewOffer({ title: "", price: "", originalPrice: "", desc: "", iconName: "Star", tag: "", tagColor: "bg-primary", isMembership: false, isVisible: true, note: "" }); }} className="flex-1 border border-input bg-secondary text-foreground hover:bg-secondary/50 rounded-xl py-2 flex items-center justify-center gap-2 transition-colors">
                                                     Cancel
                                                 </button>
                                             )}
@@ -1149,12 +1224,20 @@ const Admin = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {offers.map((o) => (
-                                        <div key={o.id} className="glass-card p-6 rounded-2xl relative">
+                                        <div 
+                                            key={o.id} 
+                                            className="glass-card p-6 rounded-2xl relative"
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, o.id, 'offer')}
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => handleDrop(e, o.id, 'offer')}
+                                            onDragEnd={handleDragEnd}
+                                        >
                                             <div className="absolute top-4 right-4 flex gap-2">
                                                 <button
                                                     onClick={() => {
                                                         setEditingOfferId(o.id);
-                                                        setNewOffer({ title: o.title, price: o.price, originalPrice: o.originalPrice || "", desc: o.desc || "", iconName: o.iconName || "Star", tag: o.tag || "", tagColor: o.tagColor || "bg-primary", isMembership: o.isMembership || false, isVisible: o.isVisible ?? true });
+                                                        setNewOffer({ title: o.title, price: o.price, originalPrice: o.originalPrice || "", desc: o.desc || "", iconName: o.iconName || "Star", tag: o.tag || "", tagColor: o.tagColor || "bg-primary", isMembership: o.isMembership || false, isVisible: o.isVisible ?? true, note: o.note || "" });
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                                     }}
                                                     className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
@@ -1254,10 +1337,11 @@ const Admin = () => {
                                             features: newBridal.features.split(',').map(f => f.trim()).filter(Boolean),
                                             tier: "silver"
                                         });
-                                        setNewBridal({ name: "", price: "", features: "", isVisible: true });
+                                        setNewBridal({ name: "", price: "", features: "", isVisible: true, note: "" });
                                     }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <input placeholder="Package Name" value={newBridal.name} onChange={(e) => setNewBridal({ ...newBridal, name: e.target.value })} className="w-full px-4 py-2 rounded-xl border bg-background" required />
                                         <input placeholder="Price" value={newBridal.price} onChange={(e) => setNewBridal({ ...newBridal, price: e.target.value })} className="w-full px-4 py-2 rounded-xl border bg-background" required />
+                                        <input placeholder="Note (Condition/Details)" value={newBridal.note} onChange={(e) => setNewBridal({ ...newBridal, note: e.target.value })} className="w-full px-4 py-2 rounded-xl border bg-background sm:col-span-2" />
                                         <textarea placeholder="Features (comma separated)" value={newBridal.features} onChange={(e) => setNewBridal({ ...newBridal, features: e.target.value })} className="w-full px-4 py-2 rounded-xl border bg-background sm:col-span-2" rows={2} />
                                         <div className="sm:col-span-2 mt-2">
                                             <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1271,7 +1355,15 @@ const Admin = () => {
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     {bridalPackages.map((pkg) => (
-                                        <div key={pkg.id} className="glass-card p-6 rounded-2xl relative">
+                                        <div 
+                                            key={pkg.id} 
+                                            className="glass-card p-6 rounded-2xl relative"
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, pkg.id, 'bridal')}
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => handleDrop(e, pkg.id, 'bridal')}
+                                            onDragEnd={handleDragEnd}
+                                        >
                                             {editingBridalId === pkg.id ? (
                                                 <div className="space-y-4">
                                                     <input
@@ -1285,6 +1377,12 @@ const Admin = () => {
                                                         onChange={(e) => setEditBridalForm({ ...editBridalForm, price: e.target.value })}
                                                         className="w-full px-3 py-2 border rounded-lg bg-background"
                                                         placeholder="Price"
+                                                    />
+                                                    <input
+                                                        value={editBridalForm.note}
+                                                        onChange={(e) => setEditBridalForm({ ...editBridalForm, note: e.target.value })}
+                                                        className="w-full px-3 py-2 border rounded-lg bg-background"
+                                                        placeholder="Note (Condition/Details)"
                                                     />
                                                     <textarea
                                                         value={editBridalForm.features}
@@ -1304,7 +1402,8 @@ const Admin = () => {
                                                                     name: editBridalForm.name,
                                                                     price: editBridalForm.price,
                                                                     features: editBridalForm.features.split(',').map(f => f.trim()).filter(Boolean),
-                                                                    isVisible: editBridalForm.isVisible
+                                                                    isVisible: editBridalForm.isVisible,
+                                                                    note: editBridalForm.note
                                                                 });
                                                                 setEditingBridalId(null);
                                                             }}
@@ -1326,7 +1425,7 @@ const Admin = () => {
                                                         <button
                                                             onClick={() => {
                                                                 setEditingBridalId(pkg.id);
-                                                                setEditBridalForm({ name: pkg.name, price: pkg.price, features: pkg.features.join(', '), isVisible: pkg.isVisible ?? true });
+                                                                setEditBridalForm({ name: pkg.name, price: pkg.price, features: pkg.features.join(', '), isVisible: pkg.isVisible ?? true, note: pkg.note || "" });
                                                             }}
                                                             className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
                                                         >

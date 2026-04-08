@@ -67,7 +67,8 @@ const ServicesSection = () => {
             >
               <div>
                 <h3 className="text-lg font-heading font-semibold mb-1">{service.name}</h3>
-                <p className="text-2xl font-bold text-gradient-primary">{service.price}{service.endPrice ? ` to ${service.endPrice}` : ''}</p>
+                <p className="text-2xl font-bold text-gradient-primary mb-1">{service.price}{service.endPrice ? ` to ${service.endPrice}` : ''}</p>
+                {service.note && <p className="text-xs text-muted-foreground mt-2 bg-secondary/50 p-2 rounded-md italic ring-1 ring-border">Note: {service.note}</p>}
               </div>
               <a
                 href="#booking"
