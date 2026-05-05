@@ -134,8 +134,12 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
-        <div className="container mx-auto flex items-center justify-between h-16 lg:h-20 px-4">
+      <header className="fixed top-0 left-0 right-0 z-50">
+        <div className="bg-primary text-primary-foreground py-2 px-4 text-center text-xs sm:text-sm font-medium shadow-sm">
+          Website is under update. Some service prices may not be listed. For details & bookings, please call or WhatsApp: <a href="tel:9011493241" className="font-bold underline hover:opacity-80 transition-opacity">9011493241</a>
+        </div>
+        <nav className="bg-background/80 backdrop-blur-lg border-b border-border/50">
+          <div className="container mx-auto flex items-center justify-between h-16 lg:h-20 px-4">
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img src={logo} alt="Styloria" className="h-14 lg:h-14 w-auto" />
           </Link>
@@ -293,7 +297,8 @@ const Navbar = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </nav>
+        </nav>
+      </header>
 
       {/* Auth Modal Overlay */}
       <AnimatePresence>

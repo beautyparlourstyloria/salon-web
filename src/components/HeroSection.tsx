@@ -46,7 +46,7 @@ const HeroSection = () => {
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 container mx-auto px-4 pt-20">
+      <div className="relative z-10 container mx-auto px-4 pt-28 md:pt-32">
         <AnimatePresence mode="wait">
           <motion.div 
             key={currentIndex} 
